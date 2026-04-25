@@ -1,0 +1,43 @@
+name: Build Static TTF Fonts
+
+on:
+  push:
+    paths:
+      - "fonts/*.ttf"
+      - "fonts/*.otf"
+  workflow_dispatch:
+
+jobs:
+  build-static:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install fonttools + gftools
+        run: |
+          python -m pip install --upgrade pip
+          pip install fonttools gftools
+
+      - name: Convert variable font → static TTFs
+        run: |
+          mkdir -p build/static
+          for vf in fonts/*.ttf; do
+            echo "Processing $vf..."
+            gftools instancer $vf \
+              --output build/static \
+              --axis wght=400 \
+              --axis ital=0
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-ttf-fonts
+          path: build/static
