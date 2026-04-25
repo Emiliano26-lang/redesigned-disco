@@ -1,18 +1,16 @@
-name: Build Static TTF Fonts
+name: Font Conversion Pipeline
 
 on:
   push:
     paths:
-      - "fonts/*.ttf"
-      - "fonts/*.otf"
+      - "fonts/**"
   workflow_dispatch:
 
 jobs:
-  build-static:
+  build-fonts:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -20,24 +18,27 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install fonttools + gftools
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install fonttools gftools
+          pip install fonttools gftools fontmake
 
-      - name: Convert variable font → static TTFs
+      # Convert variable font to static instances
+      - name: Slice variable font into static TTFs
         run: |
           mkdir -p build/static
-          for vf in fonts/*.ttf; do
-            echo "Processing $vf..."
-            gftools instancer $vf \
-              --output build/static \
-              --axis wght=400 \
-              --axis ital=0
+          gftools instancer fonts/YourVariableFont.ttf wght=400 ital=0 --output build/static
+
+      # Convert static TTFs to WOFF/WOFF2
+      - name: Convert static TTFs to webfonts
+        run: |
+          mkdir -p build/web
+          for f in build/static/*.ttf; do
+            pyftsubset "$f" --output-file="build/web/$(basename $f .ttf).woff2" --flavor=woff2 --layout-features='*' --glyphs='*'
           done
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: static-ttf-fonts
-          path: build/static
+          name: fonts
+          path: build/
