@@ -23,18 +23,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install fonttools gftools fontmake
 
-      # Convert variable font to static instances
-      - name: Slice variable font into static TTFs
+      # Slice variable font into static instances
+      - name: Generate static TTFs from variable font
         run: |
           mkdir -p build/static
-          gftools instancer fonts/YourVariableFont.ttf wght=400 ital=0 --output build/static
+          gftools instancer fonts/BeVietnamPro-VariableFont_wght.ttf wght=400 ital=0 --output build/static
 
       # Convert static TTFs to WOFF/WOFF2
       - name: Convert static TTFs to webfonts
         run: |
           mkdir -p build/web
           for f in build/static/*.ttf; do
-            pyftsubset "$f" --output-file="build/web/$(basename $f .ttf).woff2" --flavor=woff2 --layout-features='*' --glyphs='*'
+            pyftsubset "$f" \
+              --output-file="build/web/$(basename $f .ttf).woff2" \
+              --flavor=woff2 \
+              --layout-features='*' \
+              --glyphs='*'
           done
 
       - name: Upload artifacts
